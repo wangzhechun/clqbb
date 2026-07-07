@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>长乐清北帮 2048</title>
+  <!-- Tailwind CSS v3 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Font Awesome -->
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#000000',
+            secondary: '#ffffff',
+            accent: '#d4af37',
+          },
+          fontFamily: {
+            'inter': ['Inter', 'sans-serif'],
+            'sans': ['Inter', 'sans-serif'],
+          },
+          boxShadow: {
+            'inner-lg': 'inset 0 2px 4px 0 rgba(0, 0, 0, 0.06)',
+            'glass': '0 8px 32px 0 rgba(0, 0, 0, 0.37)',
+          },
+        }
+      }
+    }
+  </script>
+
+  <style type="text/tailwindcss">
+    @layer utilities {
+      .text-shadow {
+        text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      }
+      .text-shadow-lg {
+        text-shadow: 0 4px 8px rgba(0,0,0,0.2);
+      }
+      .glass-effect {
+        background: rgba(255, 255, 255, 0.25);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.18);
+      }
+      .glass-effect-dark {
+        background: rgba(0, 0, 0, 0.25);
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+        border: 1px solid rgba(0, 0, 0, 0.18);
+      }
+      .tile-inner {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        height: 100%;
+        border-radius: 0.5rem;
+        font-weight: bold;
+        z-index: 10;
+        transition: transform 0.15s ease, opacity 0.15s ease;
+        padding: 0.75rem;
+      }
+      .tile-inner img {
+        width: 70px;
+        height: 70px;
+        object-fit: cover;
+        border-radius: 4px;
+        margin-bottom: 0.25rem;
+        image-rendering: -webkit-optimize-contrast;
+        image-rendering: crisp-edges;
+        opacity: 0;
+        transition: opacity 0.3s ease-in-out;
+      }
+      .tile-inner img.loaded {
+        opacity: 1;
+      }
+      .tile-inner .name {
+        font-size: 0.875rem;
+        font-family: 'Inter', sans-serif;
+      }
+      .tile-merged .tile-inner {
+        animation: pop 0.2s ease-in-out;
+        z-index: 20;
+      }
+      @keyframes pop {
+        0% { transform: scale(1); }
+        50% { transform: scale(1.2); }
+        100% { transform: scale(1); }
+      }
+      @keyframes victoryAppear {
+        0% { opacity: 0; transform: scale(0.8) rotate(-5deg); filter: blur(10px); }
+        50% { transform: scale(1.1) rotate(3deg); }
+        100% { opacity: 1; transform: scale(1) rotate(0); filter: blur(0); }
+      }
+      .victory-card {
+        animation: victoryAppear 2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      }
+      .game-message {
+        display: none;
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 100;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        animation: fadeIn 0.5s ease-in-out;
+        border-radius: 0.5rem;
+      }
+      .game-message.game-won, .game-message.game-over {
+        display: flex;
+      }
+      @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
+      }
+      .game-message .message {
+        font-size: 2.5rem;
+        font-weight: bold;
+        margin-bottom: 0.5rem;
+        font-family: 'Inter', sans-serif;
+        color: white;
+        text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+      }
+      .game-message .earned-points {
+        font-size: 1rem;
+        color: white;
+        margin-bottom: 1.5rem;
+        text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+      }
+      .game-message button {
+        font-size: 1.2rem;
+        padding: 0.5rem 1.5rem;
+        border-radius: 0.25rem;
+        background: white;
+        color: #333;
+        font-weight: bold;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        font-family: 'Inter', sans-serif;
+        border: none;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+      }
+      .game-message button:hover {
+        background: #f0f0f0;
+        transform: translateY(-2px);
+      }
+      .game-message button:active {
+        transform: translateY(0);
+      }
+      .dark .game-message button {
+        background: white;
+        color: #333;
+      }
+      .dark .game-message button:hover {
+        background: #e0e0e0;
+      }
+      .rule-item {
+        display: flex;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+      }
+      .rule-item i {
+        margin-right: 0.5rem;
+        color: #333;
+        margin-top: 0.25rem;
+      }
+      .dark .rule-item i {
+        color: #ddd;
+      }
+      .theme-toggle {
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        background: rgba(255, 255, 255, 0.7);
+        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      }
+      .dark .theme-toggle {
+        background: rgba(0, 0, 0, 0.7);
+        color: white;
+      }
+      .theme-toggle:hover {
+        transform: scale(1.1);
+      }
+      .btn-disabled {
+        background-color: #8B0000 !important;
+        cursor: not-allowed;
+        opacity: 0.7;
+      }
+      .btn-enabled {
+        background-color: #FF0000 !important;
+        cursor: pointer;
+        opacity: 1;
+      }
+      .btn-enabled:hover {
+        background-color: #CC0000 !important;
+      }
+      .my-score {
+        font-size: 1rem;
+        font-weight: 500;
+        margin-top: 0.25rem;
+        margin-bottom: 0.5rem;
+      }
+      .side-btn {
+        margin-top: 0.75rem;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen font-inter dark:bg-gray-900 transition-colors duration-300">
+<div class="relative w-full min-h-screen overflow-hidden" style="min-height: 100vh; display: flex; flex-direction: column;">
+    <!-- 背景图 -->
+    <div class="absolute inset-0 z-0">
+      <img src="https://gp3e.saobby.com/i/Yit2amZIRbpKBRaf.png" alt="背景" class="w-full h-full object-cover opacity-50 dark:opacity-30" style="border: none;">
+    </div>
+
+    <!-- 主容器 -->
+    <div class="relative z-10 container mx-auto px-4 py-8 md:py-12 max-w-6xl flex-grow flex flex-col">
+      <header class="mb-8 text-center">
+        <div class="flex justify-center items-center relative">
+          <div class="absolute left-0 md:left-auto md:right-full md:mr-4 top-0 transform md:translate-x-0 -translate-x-16 -translate-y-4 glass-effect dark:glass-effect-dark px-2 py-1 rounded">
+            <span class="text-lg font-['Ma_Shan_Zheng'] text-red-800 dark:text-red-400">淳</span>
+          </div>
+          <h1 class="text-3xl md:text-4xl font-inter text-primary dark:text-white">长乐清北帮 2048</h1>
+          <div class="theme-toggle" id="theme-toggle">
+            <i class="fa fa-moon-o" id="theme-icon"></i>
+          </div>
+        </div>
+        <p class="mt-4 text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto font-inter">从戴CEO开始，层层递进，合成武校！</p>
+      </header>
+
+      <div class="flex flex-col md:flex-row justify-center items-start gap-8 mt-8">
+        <!-- 游戏棋盘 -->
+        <div class="relative">
+          <div class="game-container glass-effect dark:glass-effect-dark rounded-lg p-8 shadow-lg border-2 border-gray-200 dark:border-gray-700 relative" style="box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);">
+            
+            <div class="grid grid-cols-4 gap-8 bg-white dark:bg-gray-800 bg-opacity-70 dark:bg-opacity-70 rounded-md p-8" id="game-board" style="max-width: 700px; width: 100%; aspect-ratio: 1/1; margin: 0 auto;">
+            </div>
+
+            <div class="flex justify-between mt-3 text-black dark:text-white">
+              <div class="flex flex-col items-center bg-white dark:bg-gray-800 bg-opacity-70 dark:bg-opacity-70 rounded-md px-4 py-2">
+                <span class="text-sm opacity-75 font-inter" style="font-weight: bold; font-size: 16px;">当前得分</span>
+                <span class="text-xl font-bold font-inter" id="score">0</span>
+              </div>
+              <div class="flex flex-col items-center bg-white dark:bg-gray-800 bg-opacity-70 dark:bg-opacity-70 rounded-md px-4 py-2">
+                <span class="text-sm opacity-75 font-inter" style="font-weight: bold; font-size: 16px;">最高得分</span>
+                <span class="text-xl font-bold font-inter" id="best-score">0</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- 游戏结束/胜利消息 -->
+          <div class="game-message" id="game-message">
+            <div class="victory-card bg-white dark:bg-gray-800 bg-opacity-90 dark:bg-opacity-90 p-8 rounded-lg shadow-xl max-w-md">
+              <div class="message" id="message-text">游戏胜利!</div>
+              <div class="earned-points" id="earned-points">获得积分：0</div>
+              <button id="try-again-btn" class="bg-white text-gray-800 hover:bg-gray-100">再来一次</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 右侧规则区（含积分显示和两个按钮） -->
+        <div class="w-full md:w-64 glass-effect dark:glass-effect-dark rounded-lg p-6 relative" style="align-self: flex-start; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);">
+          <div class="text-center">
+            <h2 class="text-2xl font-inter inline-block relative dark:text-white" style="font-size: 20px;">游戏规则</h2>
+            <div class="my-score font-inter text-gray-700 dark:text-gray-300" id="my-score-display">我的积分：0</div>
+          </div>
+          
+          <div class="space-y-4 mt-4">
+            <div class="rule-item">
+              <i class="fa fa-undo text-primary dark:text-gray-300"></i>
+              <p class="font-inter dark:text-gray-300">点击"百亿补贴"按钮可以悔棋一次，帮助你纠正错误的移动</p>
+            </div>
+            <div class="rule-item">
+              <i class="fa fa-gift text-primary dark:text-gray-300"></i>
+              <p class="font-inter dark:text-gray-300">"🎲 积分招募"：消耗10000积分，随机获得一个棋子（64/128/256/512/1024，概率分别为30%/30%/25%/12%/3%）</p>
+            </div>
+            <div class="rule-item">
+              <i class="fa fa-info-circle text-primary dark:text-gray-300"></i>
+              <p class="font-inter dark:text-gray-300">特别说明：适度游戏益脑，沉迷游戏伤身。本网站仅作学习娱乐。</p>
+            </div>
+          </div>
+          
+          <button id="undo-btn" class="mt-4 w-full bg-primary dark:bg-gray-700 text-white py-2 px-4 rounded hover:bg-opacity-80 transition-colors font-inter">
+            <i class="fa fa-undo mr-2"></i>百亿补贴
+          </button>
+          
+          <button id="recruit-btn" class="mt-2 w-full bg-primary dark:bg-gray-700 text-white py-2 px-4 rounded hover:bg-opacity-80 transition-colors font-inter">
+            🎲 积分招募
+          </button>
+          
+          <div class="mt-6 text-center text-black dark:text-gray-300 text-xs">
+            <p>创作者：WZC</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <footer class="relative z-10 container mx-auto px-4 py-6 text-center">
+      <p class="text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto font-inter">好消息，武哲出售！</p>
+    </footer>
+  </div>
+
+  <!-- 百亿补贴弹窗 -->
+  <div id="subsidy-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
+    <div class="absolute inset-0 bg-black bg-opacity-50" id="subsidy-backdrop"></div>
+    <div class="relative bg-white dark:bg-black rounded-lg shadow-2xl max-w-sm w-full p-6 text-center">
+      <p class="text-lg font-inter dark:text-white" id="subsidy-message">
+        请在三秒倒计时结束后点击「抢答」按钮
+      </p>
+      <div class="text-6xl font-bold text-red-600 my-4" id="countdown-display">3</div>
+      <button id="answer-btn" class="btn-disabled px-6 py-2 text-white rounded-md font-inter transition" disabled>
+        抢答
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // 角色配置表
+    const characterConfig = {
+      2: { name: "2", image: "https://gp3e.saobby.com/i/7jKj9qtdIBdJAknB.png" },
+      4: { name: "4", image: "https://gp3e.saobby.com/i/pPJvFj7TgAeS2GLt.png" },
+      8: { name: "8", image: "https://gp3e.saobby.com/i/rRt1w5gTCiiig2RV.png" },
+      16: { name: "16", image: "https://gp3e.saobby.com/i/Z4jR9U1LszLsuOsr.png" },
+      32: { name: "32", image: "https://gp3e.saobby.com/i/ztRTz3hNYq0ioIxN.png" },
+      64: { name: "64", image: "https://gp3e.saobby.com/i/RZjWrp71NW9SZUZy.png" },
+      128: { name: "128", image: "https://gp3e.saobby.com/i/LFpfoRPmqCTbKRVT.png" },
+      256: { name: "256", image: "https://gp3e.saobby.com/i/x9h07Xn3ksQToRp6.png" },
+      512: { name: "512", image: "https://gp3e.saobby.com/i/CR0xLIdmKm3cnAL0.png" },
+      1024: { name: "1024", image: "https://gp3e.saobby.com/i/5RQqZiN19ocLX26t.png" },
+      2048: { name: "2048", image: "https://gp3e.saobby.com/i/ugG9yvDI5kKpEBBa.png" }
+    };
+
+    class Game2048 {
+      constructor() {
+        this.size = 4;
+        this.board = [];
+        this.score = 0;
+        this.bestScore = localStorage.getItem('bestScore') || 0;
+        this.previousState = null;
+        this.over = false;
+        this.won = false;
+        this.allowUndo = false;
+
+        // 积分系统
+        this.totalScore = parseInt(localStorage.getItem('totalScore')) || 0;
+
+        this.gameBoard = document.getElementById('game-board');
+        this.scoreDisplay = document.getElementById('score');
+        this.bestScoreDisplay = document.getElementById('best-score');
+        this.gameMessage = document.getElementById('game-message');
+        this.messageText = document.getElementById('message-text');
+        this.earnedPoints = document.getElementById('earned-points');
+        this.tryAgainBtn = document.getElementById('try-again-btn');
+        this.undoBtn = document.getElementById('undo-btn');
+        this.recruitBtn = document.getElementById('recruit-btn');
+        this.themeToggle = document.getElementById('theme-toggle');
+        this.themeIcon = document.getElementById('theme-icon');
+        this.myScoreDisplay = document.getElementById('my-score-display');
+
+        this.subsidyModal = document.getElementById('subsidy-modal');
+        this.countdownDisplay = document.getElementById('countdown-display');
+        this.answerBtn = document.getElementById('answer-btn');
+        this.countdownInterval = null;
+        this.countdownEndTime = null;
+
+        this.setup();
+        this.setupEventListeners();
+        this.initTheme();
+        this.updateMyScoreDisplay();
+      }
+
+      initTheme() {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'dark') {
+          document.documentElement.classList.add('dark');
+          this.themeIcon.className = 'fa fa-sun-o';
+        } else {
+          document.documentElement.classList.remove('dark');
+          this.themeIcon.className = 'fa fa-moon-o';
+        }
+      }
+
+      toggleTheme() {
+        if (document.documentElement.classList.contains('dark')) {
+          document.documentElement.classList.remove('dark');
+          localStorage.setItem('theme', 'light');
+          this.themeIcon.className = 'fa fa-moon-o';
+        } else {
+          document.documentElement.classList.add('dark');
+          localStorage.setItem('theme', 'dark');
+          this.themeIcon.className = 'fa fa-sun-o';
+        }
+      }
+
+      setup() {
+        this.gameBoard.innerHTML = '';
+        this.gameBoard.style.gridTemplateColumns = `repeat(${this.size}, 1fr)`;
+        for (let i = 0; i < this.size * this.size; i++) {
+          const tile = document.createElement('div');
+          tile.className = 'bg-white dark:bg-gray-800 bg-opacity-20 rounded-lg flex items-center justify-center aspect-square';
+          this.gameBoard.appendChild(tile);
+        }
+        this.board = Array(this.size).fill().map(() => Array(this.size).fill(0));
+        this.score = 0;
+        this.allowUndo = false;
+        this.scoreDisplay.textContent = this.score;
+        this.bestScoreDisplay.textContent = this.bestScore;
+        this.preloadImages();
+        this.addRandomTile();
+        this.addRandomTile();
+        this.renderBoard();
+        this.won = false;
+        this.over = false;
+        this.gameMessage.classList.remove('game-won', 'game-over');
+        this.earnedPoints.textContent = '';
+      }
+
+      saveState() {
+        this.previousState = {
+          board: JSON.parse(JSON.stringify(this.board)),
+          score: this.score
+        };
+      }
+
+      undo() {
+        if (this.previousState) {
+          this.board = this.previousState.board;
+          this.score = this.previousState.score;
+          this.scoreDisplay.textContent = this.score;
+          this.renderBoard();
+          this.previousState = null;
+          this.allowUndo = false;
+        }
+      }
+
+      addRandomTile() {
+        const emptyTiles = [];
+        for (let i = 0; i < this.size; i++) {
+          for (let j = 0; j < this.size; j++) {
+            if (this.board[i][j] === 0) emptyTiles.push({ x: i, y: j });
+          }
+        }
+        if (emptyTiles.length > 0) {
+          const randomTile = emptyTiles[Math.floor(Math.random() * emptyTiles.length)];
+          this.board[randomTile.x][randomTile.y] = Math.random() < 0.9 ? 2 : 4;
+          return true;
+        }
+        return false;
+      }
+
+      // 积分招募
+      recruit() {
+        if (this.over || this.won) {
+          alert('游戏已结束，无法进行招募。');
+          return;
+        }
+        if (this.totalScore < 10000) {
+          alert(`积分不足！当前积分：${this.totalScore}，需要10000积分。`);
+          return;
+        }
+        // 检查是否有空格
+        let emptyCount = 0;
+        for (let i = 0; i < this.size; i++) {
+          for (let j = 0; j < this.size; j++) {
+            if (this.board[i][j] === 0) emptyCount++;
+          }
+        }
+        if (emptyCount === 0) {
+          alert('棋盘已满，无法招募新棋子！');
+          return;
+        }
+
+        if (!confirm(`确定消耗 10000 积分进行一次招募吗？当前积分：${this.totalScore}`)) {
+          return;
+        }
+
+        // 扣减积分
+        this.totalScore -= 10000;
+        this.saveTotalScore();
+
+        // 随机决定棋子数值
+        const rand = Math.random() * 100;
+        let value;
+        if (rand < 30) value = 64;
+        else if (rand < 60) value = 128;
+        else if (rand < 85) value = 256;
+        else if (rand < 97) value = 512;
+        else value = 1024;
+
+        // 随机放置到空格
+        const emptyPositions = [];
+        for (let i = 0; i < this.size; i++) {
+          for (let j = 0; j < this.size; j++) {
+            if (this.board[i][j] === 0) emptyPositions.push({ x: i, y: j });
+          }
+        }
+        const pos = emptyPositions[Math.floor(Math.random() * emptyPositions.length)];
+        this.board[pos.x][pos.y] = value;
+        this.renderBoard();
+        // 播放一个音效（可选）
+        this.playMergeSound(); // 复用合并音效
+        alert(`招募成功！获得 ${value} 棋子！`);
+      }
+
+      preloadImages() {
+        this.imageCache = {};
+        this.loadingPromises = {};
+        for (const key in characterConfig) {
+          this.preloadSingleImage(key, characterConfig[key].image);
+        }
+      }
+
+      preloadSingleImage(key, src) {
+        if (this.imageCache[key] && this.imageCache[key].src === src) return Promise.resolve(this.imageCache[key]);
+        if (this.loadingPromises[key]) return this.loadingPromises[key];
+        this.loadingPromises[key] = new Promise((resolve, reject) => {
+          const img = new Image();
+          if (src.includes('gp3e.saobby.com')) img.crossOrigin = 'anonymous';
+          const timeout = setTimeout(() => reject(new Error(`Image load timeout: ${src}`)), 10000);
+          img.onload = () => {
+            clearTimeout(timeout);
+            this.imageCache[key] = img;
+            delete this.loadingPromises[key];
+            resolve(img);
+          };
+          img.onerror = () => {
+            clearTimeout(timeout);
+            delete this.loadingPromises[key];
+            this.fallbackImageLoad(key, src, resolve, reject);
+          };
+          img.src = src;
+        });
+        return this.loadingPromises[key];
+      }
+
+      fallbackImageLoad(key, src, resolve, reject) {
+        const img = new Image();
+        const timeout = setTimeout(() => reject(new Error(`Fallback image load timeout: ${src}`)), 10000);
+        img.onload = () => {
+          clearTimeout(timeout);
+          this.imageCache[key] = img;
+          resolve(img);
+        };
+        img.onerror = () => {
+          clearTimeout(timeout);
+          reject(new Error(`Fallback also failed: ${src}`));
+        };
+        img.src = src;
+      }
+
+      renderBoard() {
+        const tiles = this.gameBoard.children;
+        for (let i = 0; i < this.size; i++) {
+          for (let j = 0; j < this.size; j++) {
+            const index = i * this.size + j;
+            const value = this.board[i][j];
+            const tile = tiles[index];
+            if (value !== 0) {
+              const existingValue = tile.dataset.value;
+              const existingSrc = tile.dataset.src;
+              const newSrc = characterConfig[value].image;
+              if (existingValue === value.toString() && existingSrc === newSrc) continue;
+              tile.dataset.value = value.toString();
+              tile.dataset.src = newSrc;
+              let tileInner = tile.querySelector('.tile-inner');
+              if (!tileInner) {
+                tileInner = document.createElement('div');
+                tileInner.className = 'tile-inner bg-white dark:bg-gray-700 rounded-lg shadow-inner-lg';
+                tile.appendChild(tileInner);
+              }
+              const config = characterConfig[value];
+              let img = tileInner.querySelector('img');
+              if (!img) {
+                img = document.createElement('img');
+                img.alt = config.name;
+                if (newSrc.includes('gp3e.saobby.com')) img.crossOrigin = 'anonymous';
+                tileInner.appendChild(img);
+              }
+              let name = tileInner.querySelector('.name');
+              if (!name) {
+                name = document.createElement('div');
+                name.className = 'name dark:text-white';
+                tileInner.appendChild(name);
+              }
+              const currentSrc = img.getAttribute('data-current-src');
+              if (this.imageCache[value] && this.imageCache[value].src === newSrc) {
+                if (currentSrc !== newSrc) {
+                  img.setAttribute('data-current-src', newSrc);
+                  img.src = this.imageCache[value].src;
+                }
+                if (!img.classList.contains('loaded')) img.classList.add('loaded');
+              } else if (currentSrc !== newSrc) {
+                img.setAttribute('data-current-src', newSrc);
+                img.classList.remove('loaded');
+                if (this.loadingPromises[value]) {
+                  this.loadingPromises[value].then((cachedImg) => {
+                    if (img.getAttribute('data-current-src') === newSrc) {
+                      img.src = cachedImg.src;
+                      img.classList.add('loaded');
+                    }
+                  }).catch(() => img.style.display = 'none');
+                } else {
+                  this.preloadSingleImage(value, newSrc).then((cachedImg) => {
+                    if (img.getAttribute('data-current-src') === newSrc) {
+                      img.src = cachedImg.src;
+                      img.classList.add('loaded');
+                    }
+                  }).catch(() => img.style.display = 'none');
+                }
+              }
+              name.textContent = config.name;
+              tile.classList.add('tile-rendered');
+              tile.classList.remove('bg-white', 'bg-opacity-20', 'dark:bg-gray-800');
+            } else {
+              delete tile.dataset.value;
+              delete tile.dataset.src;
+              tile.classList.remove('tile-rendered');
+              tile.innerHTML = '';
+              tile.className = 'bg-white dark:bg-gray-800 bg-opacity-20 rounded-lg flex items-center justify-center aspect-square';
+            }
+          }
+        }
+      }
+
+      move(direction) {
+        if (this.over || this.won) return false;
+        this.saveState();
+        let moved = false;
+        switch (direction) {
+          case 'up': moved = this.moveUp(); break;
+          case 'right': moved = this.moveRight(); break;
+          case 'down': moved = this.moveDown(); break;
+          case 'left': moved = this.moveLeft(); break;
+        }
+        if (moved) {
+          this.playMoveSound();
+          this.addRandomTile();
+          this.renderBoard();
+          this.checkGameStatus();
+          this.allowUndo = true;
+        } else {
+          this.previousState = null;
+        }
+        return moved;
+      }
+
+      moveUp() {
+        let moved = false;
+        for (let j = 0; j < this.size; j++) {
+          for (let i = 1; i < this.size; i++) {
+            if (this.board[i][j] !== 0) {
+              let row = i;
+              while (row > 0 && this.board[row - 1][j] === 0) {
+                this.board[row - 1][j] = this.board[row][j];
+                this.board[row][j] = 0;
+                row--;
+                moved = true;
+              }
+              if (row > 0 && this.board[row - 1][j] === this.board[row][j]) {
+                const mergedValue = this.board[row][j] * 2;
+                this.board[row - 1][j] = mergedValue;
+                this.score += mergedValue;
+                this.board[row][j] = 0;
+                moved = true;
+                this.playMergeSound();
+              }
+            }
+          }
+        }
+        if (moved) {
+          this.scoreDisplay.textContent = this.score;
+          this.updateBestScore();
+        }
+        return moved;
+      }
+
+      moveRight() {
+        let moved = false;
+        for (let i = 0; i < this.size; i++) {
+          for (let j = this.size - 2; j >= 0; j--) {
+            if (this.board[i][j] !== 0) {
+              let col = j;
+              while (col < this.size - 1 && this.board[i][col + 1] === 0) {
+                this.board[i][col + 1] = this.board[i][col];
+                this.board[i][col] = 0;
+                col++;
+                moved = true;
+              }
+              if (col < this.size - 1 && this.board[i][col + 1] === this.board[i][col]) {
+                const mergedValue = this.board[i][col] * 2;
+                this.board[i][col + 1] = mergedValue;
+                this.score += mergedValue;
+                this.board[i][col] = 0;
+                moved = true;
+                this.playMergeSound();
+              }
+            }
+          }
+        }
+        if (moved) {
+          this.scoreDisplay.textContent = this.score;
+          this.updateBestScore();
+        }
+        return moved;
+      }
+
+      moveDown() {
+        let moved = false;
+        for (let j = 0; j < this.size; j++) {
+          for (let i = this.size - 2; i >= 0; i--) {
+            if (this.board[i][j] !== 0) {
+              let row = i;
+              while (row < this.size - 1 && this.board[row + 1][j] === 0) {
+                this.board[row + 1][j] = this.board[row][j];
+                this.board[row][j] = 0;
+                row++;
+                moved = true;
+              }
+              if (row < this.size - 1 && this.board[row + 1][j] === this.board[row][j]) {
+                const mergedValue = this.board[row][j] * 2;
+                this.board[row + 1][j] = mergedValue;
+                this.score += mergedValue;
+                this.board[row][j] = 0;
+                moved = true;
+                this.playMergeSound();
+              }
+            }
+          }
+        }
+        if (moved) {
+          this.scoreDisplay.textContent = this.score;
+          this.updateBestScore();
+        }
+        return moved;
+      }
+
+      moveLeft() {
+        let moved = false;
+        for (let i = 0; i < this.size; i++) {
+          for (let j = 1; j < this.size; j++) {
+            if (this.board[i][j] !== 0) {
+              let col = j;
+              while (col > 0 && this.board[i][col - 1] === 0) {
+                this.board[i][col - 1] = this.board[i][col];
+                this.board[i][col] = 0;
+                col--;
+                moved = true;
+              }
+              if (col > 0 && this.board[i][col - 1] === this.board[i][col]) {
+                const mergedValue = this.board[i][col] * 2;
+                this.board[i][col - 1] = mergedValue;
+                this.score += mergedValue;
+                this.board[i][col] = 0;
+                moved = true;
+                this.playMergeSound();
+              }
+            }
+          }
+        }
+        if (moved) {
+          this.scoreDisplay.textContent = this.score;
+          this.updateBestScore();
+        }
+        return moved;
+      }
+
+      playMoveSound() {
+        try {
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          oscillator.type = 'sine';
+          oscillator.frequency.setValueAtTime(200, audioContext.currentTime);
+          oscillator.frequency.exponentialRampToValueAtTime(300, audioContext.currentTime + 0.1);
+          gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.1);
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.1);
+        } catch (error) {}
+      }
+
+      playMergeSound() {
+        try {
+          const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+          const oscillator = audioContext.createOscillator();
+          const gainNode = audioContext.createGain();
+          oscillator.connect(gainNode);
+          gainNode.connect(audioContext.destination);
+          oscillator.type = 'triangle';
+          oscillator.frequency.setValueAtTime(400, audioContext.currentTime);
+          oscillator.frequency.exponentialRampToValueAtTime(600, audioContext.currentTime + 0.2);
+          gainNode.gain.setValueAtTime(0.15, audioContext.currentTime);
+          gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.2);
+          oscillator.start();
+          oscillator.stop(audioContext.currentTime + 0.2);
+        } catch (error) {}
+      }
+
+      updateBestScore() {
+        if (this.score > this.bestScore) {
+          this.bestScore = this.score;
+          this.bestScoreDisplay.textContent = this.bestScore;
+          localStorage.setItem('bestScore', this.bestScore);
+        }
+      }
+
+      updateMyScoreDisplay() {
+        this.myScoreDisplay.textContent = `我的积分：${this.totalScore}`;
+      }
+
+      saveTotalScore() {
+        localStorage.setItem('totalScore', this.totalScore);
+        this.updateMyScoreDisplay();
+      }
+
+      checkGameStatus() {
+        let isWin = false;
+        for (let i = 0; i < this.size; i++) {
+          for (let j = 0; j < this.size; j++) {
+            if (this.board[i][j] === 2048) {
+              isWin = true;
+              break;
+            }
+          }
+          if (isWin) break;
+        }
+
+        if (isWin) {
+          this.won = true;
+          this.messageText.textContent = '游戏胜利!';
+          const earned = this.score + 1000000;
+          this.totalScore += earned;
+          this.saveTotalScore();
+          this.earnedPoints.textContent = `获得积分：${this.score} + 1000000 = ${earned}`;
+          this.gameMessage.classList.add('game-won');
+          return;
+        }
+
+        // 检查是否死局
+        let hasEmpty = false;
+        for (let i = 0; i < this.size; i++) {
+          for (let j = 0; j < this.size; j++) {
+            if (this.board[i][j] === 0) { hasEmpty = true; break; }
+          }
+          if (hasEmpty) break;
+        }
+        if (!hasEmpty) {
+          let canMerge = false;
+          for (let i = 0; i < this.size; i++) {
+            for (let j = 0; j < this.size; j++) {
+              const value = this.board[i][j];
+              if (j < this.size - 1 && value === this.board[i][j + 1]) { canMerge = true; break; }
+              if (i < this.size - 1 && value === this.board[i + 1][j]) { canMerge = true; break; }
+            }
+            if (canMerge) break;
+          }
+          if (!canMerge) {
+            this.over = true;
+            this.messageText.textContent = 'GAME OVER!';
+            const earned = this.score;
+            this.totalScore += earned;
+            this.saveTotalScore();
+            this.earnedPoints.textContent = `获得积分：${earned}`;
+            this.gameMessage.classList.add('game-over');
+            return;
+          }
+        }
+      }
+
+      // ----- 百亿补贴 -----
+      showSubsidyModal() {
+        if (!this.allowUndo) {
+          alert('当前无法使用百亿补贴，请先进行一次有效移动。');
+          return;
+        }
+        if (this.over || this.won) {
+          alert('游戏已结束，无法使用百亿补贴。');
+          return;
+        }
+        this.subsidyModal.classList.remove('hidden');
+        this.countdownDisplay.textContent = '3';
+        this.answerBtn.disabled = true;
+        this.answerBtn.className = 'btn-disabled px-6 py-2 text-white rounded-md font-inter transition';
+        this.answerBtn.onclick = null;
+        this.countdownEndTime = null;
+        this.startCountdown();
+      }
+
+      hideSubsidyModal() {
+        this.subsidyModal.classList.add('hidden');
+        if (this.countdownInterval) {
+          clearInterval(this.countdownInterval);
+          this.countdownInterval = null;
+        }
+      }
+
+      startCountdown() {
+        let count = 3;
+        this.countdownDisplay.textContent = count;
+        if (this.countdownInterval) clearInterval(this.countdownInterval);
+        this.countdownInterval = setInterval(() => {
+          count--;
+          this.countdownDisplay.textContent = count;
+          if (count <= 0) {
+            clearInterval(this.countdownInterval);
+            this.countdownInterval = null;
+            this.countdownEndTime = Date.now();
+            this.answerBtn.disabled = false;
+            this.answerBtn.className = 'btn-enabled px-6 py-2 text-white rounded-md font-inter transition';
+            this.answerBtn.onclick = () => this.handleAnswer();
+          }
+        }, 1000);
+      }
+
+      handleAnswer() {
+        this.answerBtn.disabled = true;
+        this.answerBtn.className = 'btn-disabled px-6 py-2 text-white rounded-md font-inter transition';
+        let success = false;
+        if (this.countdownEndTime !== null) {
+          const elapsed = Date.now() - this.countdownEndTime;
+          if (elapsed < 100) success = true;
+          else if (elapsed < 500) success = Math.random() < 0.5;
+          else success = false;
+        }
+        let msg = success ? '百亿补贴成功！' : '抢答失败，下次再试试吧。';
+        if (success) this.undo();
+        this.allowUndo = false;
+        alert(msg);
+        this.hideSubsidyModal();
+      }
+
+      setupEventListeners() {
+        document.addEventListener('keydown', (e) => {
+          switch (e.key) {
+            case 'ArrowUp': case 'w': case 'W': e.preventDefault(); this.move('up'); break;
+            case 'ArrowRight': case 'd': case 'D': e.preventDefault(); this.move('right'); break;
+            case 'ArrowDown': case 's': case 'S': e.preventDefault(); this.move('down'); break;
+            case 'ArrowLeft': case 'a': case 'A': e.preventDefault(); this.move('left'); break;
+          }
+        });
+
+        let touchStartX, touchStartY;
+        const gameContainer = document.querySelector('.game-container');
+        gameContainer.addEventListener('touchstart', (e) => {
+          touchStartX = e.touches[0].clientX;
+          touchStartY = e.touches[0].clientY;
+          e.preventDefault();
+        }, { passive: false });
+        gameContainer.addEventListener('touchmove', (e) => e.preventDefault(), { passive: false });
+        gameContainer.addEventListener('touchend', (e) => {
+          if (!touchStartX || !touchStartY) return;
+          const dx = e.changedTouches[0].clientX - touchStartX;
+          const dy = e.changedTouches[0].clientY - touchStartY;
+          if (Math.abs(dx) > 50 || Math.abs(dy) > 50) {
+            if (Math.abs(dx) > Math.abs(dy)) this.move(dx > 0 ? 'right' : 'left');
+            else this.move(dy > 0 ? 'down' : 'up');
+          }
+          touchStartX = null;
+          touchStartY = null;
+          e.preventDefault();
+        }, { passive: false });
+
+        this.tryAgainBtn.addEventListener('click', () => this.setup());
+        this.undoBtn.addEventListener('click', () => this.showSubsidyModal());
+        this.recruitBtn.addEventListener('click', () => this.recruit());
+        this.themeToggle.addEventListener('click', () => this.toggleTheme());
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const game = new Game2048();
+    });
+  </script>
+</body>
+</html>
