@@ -4,13 +4,9 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>长乐清北帮 2048</title>
-  <!-- Tailwind CSS v3 -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Font Awesome -->
   <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
-  <!-- Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Ma+Shan+Zheng&display=swap" rel="stylesheet">
-
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -33,7 +29,6 @@
       }
     }
   </script>
-
   <style type="text/tailwindcss">
     @layer utilities {
       .text-shadow {
@@ -228,12 +223,9 @@
 </head>
 <body class="bg-gray-100 min-h-screen font-inter dark:bg-gray-900 transition-colors duration-300">
 <div class="relative w-full min-h-screen overflow-hidden" style="min-height: 100vh; display: flex; flex-direction: column;">
-    <!-- 背景图 -->
     <div class="absolute inset-0 z-0">
       <img src="https://gp3e.saobby.com/i/Yit2amZIRbpKBRaf.png" alt="背景" class="w-full h-full object-cover opacity-50 dark:opacity-30" style="border: none;">
     </div>
-
-    <!-- 主容器 -->
     <div class="relative z-10 container mx-auto px-4 py-8 md:py-12 max-w-6xl flex-grow flex flex-col">
       <header class="mb-8 text-center">
         <div class="flex justify-center items-center relative">
@@ -247,15 +239,11 @@
         </div>
         <p class="mt-4 text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto font-inter">从戴CEO开始，层层递进，合成武校！</p>
       </header>
-
       <div class="flex flex-col md:flex-row justify-center items-start gap-8 mt-8">
-        <!-- 游戏棋盘 -->
         <div class="relative">
           <div class="game-container glass-effect dark:glass-effect-dark rounded-lg p-8 shadow-lg border-2 border-gray-200 dark:border-gray-700 relative" style="box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);">
-            
             <div class="grid grid-cols-4 gap-8 bg-white dark:bg-gray-800 bg-opacity-70 dark:bg-opacity-70 rounded-md p-8" id="game-board" style="max-width: 700px; width: 100%; aspect-ratio: 1/1; margin: 0 auto;">
             </div>
-
             <div class="flex justify-between mt-3 text-black dark:text-white">
               <div class="flex flex-col items-center bg-white dark:bg-gray-800 bg-opacity-70 dark:bg-opacity-70 rounded-md px-4 py-2">
                 <span class="text-sm opacity-75 font-inter" style="font-weight: bold; font-size: 16px;">当前得分</span>
@@ -267,8 +255,6 @@
               </div>
             </div>
           </div>
-
-          <!-- 游戏结束/胜利消息 -->
           <div class="game-message" id="game-message">
             <div class="victory-card bg-white dark:bg-gray-800 bg-opacity-90 dark:bg-opacity-90 p-8 rounded-lg shadow-xl max-w-md">
               <div class="message" id="message-text">游戏胜利!</div>
@@ -277,14 +263,11 @@
             </div>
           </div>
         </div>
-
-        <!-- 右侧规则区（含积分显示和两个按钮） -->
         <div class="w-full md:w-64 glass-effect dark:glass-effect-dark rounded-lg p-6 relative" style="align-self: flex-start; box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.1);">
           <div class="text-center">
             <h2 class="text-2xl font-inter inline-block relative dark:text-white" style="font-size: 20px;">游戏规则</h2>
             <div class="my-score font-inter text-gray-700 dark:text-gray-300" id="my-score-display">我的积分：0</div>
           </div>
-          
           <div class="space-y-4 mt-4">
             <div class="rule-item">
               <i class="fa fa-undo text-primary dark:text-gray-300"></i>
@@ -299,28 +282,22 @@
               <p class="font-inter dark:text-gray-300">特别说明：适度游戏益脑，沉迷游戏伤身。本网站仅作学习娱乐。</p>
             </div>
           </div>
-          
           <button id="undo-btn" class="mt-4 w-full bg-primary dark:bg-gray-700 text-white py-2 px-4 rounded hover:bg-opacity-80 transition-colors font-inter">
             <i class="fa fa-undo mr-2"></i>百亿补贴
           </button>
-          
           <button id="recruit-btn" class="mt-2 w-full bg-primary dark:bg-gray-700 text-white py-2 px-4 rounded hover:bg-opacity-80 transition-colors font-inter">
             🎲 积分招募
           </button>
-          
           <div class="mt-6 text-center text-black dark:text-gray-300 text-xs">
             <p>创作者：WZC</p>
           </div>
         </div>
       </div>
     </div>
-    
     <footer class="relative z-10 container mx-auto px-4 py-6 text-center">
       <p class="text-lg text-gray-700 dark:text-gray-300 max-w-2xl mx-auto font-inter">好消息，武哲出售！</p>
     </footer>
   </div>
-
-  <!-- 百亿补贴弹窗 -->
   <div id="subsidy-modal" class="fixed inset-0 z-50 flex items-center justify-center hidden">
     <div class="absolute inset-0 bg-black bg-opacity-50" id="subsidy-backdrop"></div>
     <div class="relative bg-white dark:bg-black rounded-lg shadow-2xl max-w-sm w-full p-6 text-center">
@@ -333,9 +310,7 @@
       </button>
     </div>
   </div>
-
   <script>
-    // 角色配置表
     const characterConfig = {
       2: { name: "2", image: "https://gp3e.saobby.com/i/7jKj9qtdIBdJAknB.png" },
       4: { name: "4", image: "https://gp3e.saobby.com/i/pPJvFj7TgAeS2GLt.png" },
@@ -349,7 +324,6 @@
       1024: { name: "1024", image: "https://gp3e.saobby.com/i/5RQqZiN19ocLX26t.png" },
       2048: { name: "2048", image: "https://gp3e.saobby.com/i/ugG9yvDI5kKpEBBa.png" }
     };
-
     class Game2048 {
       constructor() {
         this.size = 4;
@@ -360,10 +334,7 @@
         this.over = false;
         this.won = false;
         this.allowUndo = false;
-
-        // 积分系统
         this.totalScore = parseInt(localStorage.getItem('totalScore')) || 0;
-
         this.gameBoard = document.getElementById('game-board');
         this.scoreDisplay = document.getElementById('score');
         this.bestScoreDisplay = document.getElementById('best-score');
@@ -376,19 +347,16 @@
         this.themeToggle = document.getElementById('theme-toggle');
         this.themeIcon = document.getElementById('theme-icon');
         this.myScoreDisplay = document.getElementById('my-score-display');
-
         this.subsidyModal = document.getElementById('subsidy-modal');
         this.countdownDisplay = document.getElementById('countdown-display');
         this.answerBtn = document.getElementById('answer-btn');
         this.countdownInterval = null;
         this.countdownEndTime = null;
-
         this.setup();
         this.setupEventListeners();
         this.initTheme();
         this.updateMyScoreDisplay();
       }
-
       initTheme() {
         const savedTheme = localStorage.getItem('theme');
         if (savedTheme === 'dark') {
@@ -399,7 +367,6 @@
           this.themeIcon.className = 'fa fa-moon-o';
         }
       }
-
       toggleTheme() {
         if (document.documentElement.classList.contains('dark')) {
           document.documentElement.classList.remove('dark');
@@ -411,7 +378,6 @@
           this.themeIcon.className = 'fa fa-sun-o';
         }
       }
-
       setup() {
         this.gameBoard.innerHTML = '';
         this.gameBoard.style.gridTemplateColumns = `repeat(${this.size}, 1fr)`;
@@ -434,14 +400,12 @@
         this.gameMessage.classList.remove('game-won', 'game-over');
         this.earnedPoints.textContent = '';
       }
-
       saveState() {
         this.previousState = {
           board: JSON.parse(JSON.stringify(this.board)),
           score: this.score
         };
       }
-
       undo() {
         if (this.previousState) {
           this.board = this.previousState.board;
@@ -452,7 +416,6 @@
           this.allowUndo = false;
         }
       }
-
       addRandomTile() {
         const emptyTiles = [];
         for (let i = 0; i < this.size; i++) {
@@ -467,8 +430,6 @@
         }
         return false;
       }
-
-      // 积分招募
       recruit() {
         if (this.over || this.won) {
           alert('游戏已结束，无法进行招募。');
@@ -478,7 +439,6 @@
           alert(`积分不足！当前积分：${this.totalScore}，需要10000积分。`);
           return;
         }
-        // 检查是否有空格
         let emptyCount = 0;
         for (let i = 0; i < this.size; i++) {
           for (let j = 0; j < this.size; j++) {
@@ -489,16 +449,11 @@
           alert('棋盘已满，无法招募新棋子！');
           return;
         }
-
         if (!confirm(`确定消耗 10000 积分进行一次招募吗？当前积分：${this.totalScore}`)) {
           return;
         }
-
-        // 扣减积分
         this.totalScore -= 10000;
         this.saveTotalScore();
-
-        // 随机决定棋子数值
         const rand = Math.random() * 100;
         let value;
         if (rand < 30) value = 64;
@@ -506,8 +461,6 @@
         else if (rand < 85) value = 256;
         else if (rand < 97) value = 512;
         else value = 1024;
-
-        // 随机放置到空格
         const emptyPositions = [];
         for (let i = 0; i < this.size; i++) {
           for (let j = 0; j < this.size; j++) {
@@ -517,11 +470,9 @@
         const pos = emptyPositions[Math.floor(Math.random() * emptyPositions.length)];
         this.board[pos.x][pos.y] = value;
         this.renderBoard();
-        // 播放一个音效（可选）
-        this.playMergeSound(); // 复用合并音效
+        this.playMergeSound();
         alert(`招募成功！获得 ${value} 棋子！`);
       }
-
       preloadImages() {
         this.imageCache = {};
         this.loadingPromises = {};
@@ -529,7 +480,6 @@
           this.preloadSingleImage(key, characterConfig[key].image);
         }
       }
-
       preloadSingleImage(key, src) {
         if (this.imageCache[key] && this.imageCache[key].src === src) return Promise.resolve(this.imageCache[key]);
         if (this.loadingPromises[key]) return this.loadingPromises[key];
@@ -552,7 +502,6 @@
         });
         return this.loadingPromises[key];
       }
-
       fallbackImageLoad(key, src, resolve, reject) {
         const img = new Image();
         const timeout = setTimeout(() => reject(new Error(`Fallback image load timeout: ${src}`)), 10000);
@@ -567,7 +516,6 @@
         };
         img.src = src;
       }
-
       renderBoard() {
         const tiles = this.gameBoard.children;
         for (let i = 0; i < this.size; i++) {
@@ -641,7 +589,6 @@
           }
         }
       }
-
       move(direction) {
         if (this.over || this.won) return false;
         this.saveState();
@@ -663,7 +610,6 @@
         }
         return moved;
       }
-
       moveUp() {
         let moved = false;
         for (let j = 0; j < this.size; j++) {
@@ -693,7 +639,6 @@
         }
         return moved;
       }
-
       moveRight() {
         let moved = false;
         for (let i = 0; i < this.size; i++) {
@@ -723,7 +668,6 @@
         }
         return moved;
       }
-
       moveDown() {
         let moved = false;
         for (let j = 0; j < this.size; j++) {
@@ -753,7 +697,6 @@
         }
         return moved;
       }
-
       moveLeft() {
         let moved = false;
         for (let i = 0; i < this.size; i++) {
@@ -783,7 +726,6 @@
         }
         return moved;
       }
-
       playMoveSound() {
         try {
           const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -800,7 +742,6 @@
           oscillator.stop(audioContext.currentTime + 0.1);
         } catch (error) {}
       }
-
       playMergeSound() {
         try {
           const audioContext = new (window.AudioContext || window.webkitAudioContext)();
@@ -817,7 +758,6 @@
           oscillator.stop(audioContext.currentTime + 0.2);
         } catch (error) {}
       }
-
       updateBestScore() {
         if (this.score > this.bestScore) {
           this.bestScore = this.score;
@@ -825,16 +765,13 @@
           localStorage.setItem('bestScore', this.bestScore);
         }
       }
-
       updateMyScoreDisplay() {
         this.myScoreDisplay.textContent = `我的积分：${this.totalScore}`;
       }
-
       saveTotalScore() {
         localStorage.setItem('totalScore', this.totalScore);
         this.updateMyScoreDisplay();
       }
-
       checkGameStatus() {
         let isWin = false;
         for (let i = 0; i < this.size; i++) {
@@ -846,7 +783,6 @@
           }
           if (isWin) break;
         }
-
         if (isWin) {
           this.won = true;
           this.messageText.textContent = '游戏胜利!';
@@ -857,8 +793,6 @@
           this.gameMessage.classList.add('game-won');
           return;
         }
-
-        // 检查是否死局
         let hasEmpty = false;
         for (let i = 0; i < this.size; i++) {
           for (let j = 0; j < this.size; j++) {
@@ -888,8 +822,6 @@
           }
         }
       }
-
-      // ----- 百亿补贴 -----
       showSubsidyModal() {
         if (!this.allowUndo) {
           alert('当前无法使用百亿补贴，请先进行一次有效移动。');
@@ -907,7 +839,6 @@
         this.countdownEndTime = null;
         this.startCountdown();
       }
-
       hideSubsidyModal() {
         this.subsidyModal.classList.add('hidden');
         if (this.countdownInterval) {
@@ -915,7 +846,6 @@
           this.countdownInterval = null;
         }
       }
-
       startCountdown() {
         let count = 3;
         this.countdownDisplay.textContent = count;
@@ -933,7 +863,6 @@
           }
         }, 1000);
       }
-
       handleAnswer() {
         this.answerBtn.disabled = true;
         this.answerBtn.className = 'btn-disabled px-6 py-2 text-white rounded-md font-inter transition';
@@ -950,7 +879,6 @@
         alert(msg);
         this.hideSubsidyModal();
       }
-
       setupEventListeners() {
         document.addEventListener('keydown', (e) => {
           switch (e.key) {
@@ -960,7 +888,6 @@
             case 'ArrowLeft': case 'a': case 'A': e.preventDefault(); this.move('left'); break;
           }
         });
-
         let touchStartX, touchStartY;
         const gameContainer = document.querySelector('.game-container');
         gameContainer.addEventListener('touchstart', (e) => {
@@ -981,14 +908,12 @@
           touchStartY = null;
           e.preventDefault();
         }, { passive: false });
-
         this.tryAgainBtn.addEventListener('click', () => this.setup());
         this.undoBtn.addEventListener('click', () => this.showSubsidyModal());
         this.recruitBtn.addEventListener('click', () => this.recruit());
         this.themeToggle.addEventListener('click', () => this.toggleTheme());
       }
     }
-
     document.addEventListener('DOMContentLoaded', () => {
       const game = new Game2048();
     });
